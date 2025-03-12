@@ -1,5 +1,7 @@
 const User = require('../model/user.model');
 const bcryptjs = require('bcryptjs');
+const jwt = require('jsonwebtoken')
+require("dotenv").config();
 
 async function handleUserSignup(req,res){
     const {name,email,password} = req.body;
@@ -19,6 +21,33 @@ async function handleUserSignup(req,res){
 
 async function handleUserLogin(req,res){
     const {email,password} = req.body;
+    try {
+        const foundUser = await User.findOne({email:email});
+        
+        if(!foundUser){
+            return res.status(400).json({error:"User not found"})
+        }
+        const isValid = await bcryptjs.compare(password,foundUser.password);
+        if(!isValid){
+            return res.status(400).json({error:"Invalid password"})
+        }
+        const payload = {
+            id: foundUser._id,
+        }
+
+        const token = jwt.sign(payload,process.env.JWT_SECRET,{
+            expiresIn:'7d'
+        })
+        res.cookie('token',token,{httpOnly:true})
+        return res.json({message:"User logged in successfully"})
+    } catch (error) {
+        return res.json(error)
+    }
+}
+
+async function handleLogout(req,res){
+    res.clearCookie('token');
+    return res.json({message:"User logged out successfully"})
 }
 
 async function handleFindAllUsers(req,res){
@@ -30,4 +59,4 @@ async function handleFindAllUsers(req,res){
     }
 }
 
-module.exports = {handleUserSignup,handleFindAllUsers};
+module.exports = {handleUserSignup,handleFindAllUsers,handleUserLogin,handleLogout};
