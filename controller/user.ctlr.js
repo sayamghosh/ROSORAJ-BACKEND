@@ -32,7 +32,7 @@ async function handleUserLogin(req,res){
             return res.status(400).json({error:"Invalid password"})
         }
         const payload = {
-            id: foundUser._id,
+            id: foundUser.email,
         }
 
         const token = jwt.sign(payload,process.env.JWT_SECRET,{
@@ -59,4 +59,13 @@ async function handleFindAllUsers(req,res){
     }
 }
 
-module.exports = {handleUserSignup,handleFindAllUsers,handleUserLogin,handleLogout};
+async function handleGetAllUserName(req,res){
+    try {
+        const result = await User.find().select('-password');
+        return res.json(result)
+    } catch (error) {
+        return res.json(error)
+    }
+}
+
+module.exports = {handleUserSignup,handleFindAllUsers,handleUserLogin,handleLogout,handleGetAllUserName};
